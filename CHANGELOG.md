@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Use the Basic Latin display name Grimorio Catalog required by the community directory.
+
 ## 0.3.0
 
 - Prepare a standalone public source tree and reproducible dependency-free build.
