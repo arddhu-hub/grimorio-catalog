@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2
+
+- Match both README titles to the manifest name.
+- Document the exact purpose of Windows username, filesystem and clipboard access.
+- Replace the responsive :has selector with explicit view state.
+- Replace !important overrides with scoped selector specificity, preserving the custom document icon.
+
 ## 0.3.1
 
 - Use the Basic Latin display name Grimorio Catalog required by the community directory.

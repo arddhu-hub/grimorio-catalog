@@ -1,4 +1,4 @@
-# Catálogo Grimorio
+# Grimorio Catalog
 
 [Português](README.pt-BR.md) · [Attribution](ATTRIBUTION.md)
 
@@ -47,6 +47,25 @@ Image previews are local. No telemetry, network service, paid account or AI
 service is required. Clicking a source opens its HTTP(S) URL in your browser;
 opening an original launches its associated application. Windows IPC connects
 only to the local Grimorio process. Annotations are sent only when you save.
+
+### Security review disclosures
+
+- **Windows username:** `process.env.USERNAME` is read solely to construct the
+  existing Grimorio named-pipe endpoint (`grimorio-puerta-<username>`). It is not
+  used for fingerprinting, analytics or remote requests. No hostname, network
+  interface information or other user-profile data is collected.
+- **Direct filesystem access:** Node's filesystem API reads library metadata and
+  original images, including reference-mode image paths, and resolves local paths
+  to verify which library is connected. It does not directly write to the library.
+  Annotation changes go through the local Grimorio process; vault documents and
+  plugin settings use Obsidian's APIs. The library folder is chosen by the user.
+- **Clipboard:** clicking “Copiar referência” writes the selected reference
+  (library/item identifier, name, annotation and source URL) to the system
+  clipboard. The plugin never reads the clipboard or automatically copies data.
+
+Automated reviews may continue to flag these APIs because the permissions are
+needed for the features above. These disclosures describe the actual access;
+the plugin does not conceal or bypass the review checks.
 
 Safe mode hides items marked adult by Grimorio; it is a presentation option.
 

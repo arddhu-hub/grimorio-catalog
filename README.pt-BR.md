@@ -1,4 +1,4 @@
-# Catálogo Grimorio
+# Grimorio Catalog
 
 Uma biblioteca visual dentro do Obsidian, sem uma nota Markdown para cada imagem.
 Crie um documento em **Novo grimório**, pela faixa lateral, paleta de comandos ou
@@ -33,6 +33,21 @@ serviço de IA, conta paga ou serviço remoto necessário. Abrir a origem acessa
 URL no navegador; abrir o arquivo usa o aplicativo associado. A gravação usa
 comunicação local do Windows com o Grimorio. A galeria exibe 60 itens por página
 e relê os metadados a cada 15 segundos; bibliotecas grandes podem exigir mais tempo.
+
+## Acessos apontados na revisão
+
+- O nome de usuário do Windows (`process.env.USERNAME`) serve apenas para montar
+  o endereço da conexão local já usado pelo Grimorio. Não é usado para rastreamento
+  nem enviado a servidores; não coletamos hostname ou interfaces de rede.
+- O acesso direto ao sistema de arquivos lê metadados e imagens da biblioteca
+  escolhida, inclusive originais referenciados, e confere os caminhos da conexão.
+  Não escreve diretamente nos JSONs da biblioteca. As anotações passam pelo
+  Grimorio; documentos e configurações do cofre usam as APIs do Obsidian.
+- “Copiar referência” escreve identificação, nome, anotação e URL de origem do
+  item escolhido na área de transferência. O plugin não lê seu conteúdo nem
+  copia referências automaticamente.
+
+Esses acessos necessários podem continuar aparecendo como avisos na revisão.
 
 Autoria e manutenção: **Arddhu**. **Toda a codificação própria foi feita pelo
 OpenAI Codex, sob direção de Arddhu.** Grimorio é de Frederick Andrade Pérez

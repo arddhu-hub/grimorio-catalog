@@ -17,3 +17,10 @@ if (
 )
   throw Error("Tag must equal manifest version (no v prefix)");
 console.log("Release metadata and JavaScript syntax OK");
+for (const file of ["README.md", "README.pt-BR.md"]) {
+  if (fs.readFileSync(file, "utf8").split(/\r?\n/)[0] !== "# " + manifest.name)
+    throw Error("README title must match manifest: " + file);
+}
+const css = fs.readFileSync("src/styles.css", "utf8");
+if (css.includes("!important") || css.includes(":has("))
+  throw Error("Unexpected broad CSS override or relational selector");

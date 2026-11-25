@@ -55,7 +55,7 @@ class CatalogView extends TextFileView {
       this.signature = null;
       if (this.status) {
         this.applyVisibility();
-        this.detail.empty();
+        this.clearDetail();
         this.list.empty();
         this.reload();
       }
@@ -64,11 +64,16 @@ class CatalogView extends TextFileView {
         this.status.setText("Não foi possível abrir o documento: " + e.message);
     }
   }
+  clearDetail() {
+    this.detail.empty();
+    this.contentEl.classList.remove("grim-showing-detail");
+  }
   clear() {
     this.document = { schema: 1, type: "grimorio-catalog", libraryPath: "" };
     this.selected = null;
     this.data = null;
     this.signature = null;
+    if (this.detail) this.clearDetail();
   }
   get libraryPath() {
     return this.document?.libraryPath || "";
@@ -88,7 +93,7 @@ class CatalogView extends TextFileView {
       this.requestSave();
       this.signature = null;
       this.selected = null;
-      this.detail.empty();
+      this.clearDetail();
       await this.reload();
     }).open();
   }
@@ -223,7 +228,7 @@ class CatalogView extends TextFileView {
         if (current) await this.show(current);
         else {
           this.selected = null;
-          this.detail.empty();
+          this.clearDetail();
         }
       }
     } catch (e) {
@@ -304,6 +309,7 @@ class CatalogView extends TextFileView {
     this.selected = item.id;
     const el = this.detail;
     el.empty();
+    this.contentEl.classList.add("grim-showing-detail");
     this.detail.parentElement.scrollTop = 0;
     el.scrollTop = 0;
     button(el, "Voltar à galeria", () => {
@@ -312,7 +318,7 @@ class CatalogView extends TextFileView {
         return;
       }
       this.selected = null;
-      el.empty();
+      this.clearDetail();
     });
     el.createEl("h3", { cls: "grim-name", text: item.name });
     if (item.adult && this.plugin.data.safeMode) {
