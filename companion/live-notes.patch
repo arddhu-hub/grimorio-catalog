@@ -1,0 +1,178 @@
+diff --git a/app/puente/src/comandos.rs b/app/puente/src/comandos.rs
+index ca2225b..4ff2cf2 100644
+--- a/app/puente/src/comandos.rs
++++ b/app/puente/src/comandos.rs
+@@ -100,6 +100,8 @@ pub enum Comando {
+         #[serde(default)]
+         quitar: Vec<String>,
+     },
++    /// Edición externa serializada por el mismo trabajador que la interfaz.
++    NotaExterna { id: String, texto: String, anterior: String, biblioteca: String, solicitud: String },
+     Nota {
+         id: String,
+         texto: String,
+@@ -685,6 +687,23 @@ pub fn ejecutar(
+             );
+         }
+ 
++        Comando::NotaExterna { id, texto, anterior, biblioteca, solicitud } => {
++            // Comparar y escribir en el hilo propietario evita perder una nota
++            // cambiada desde la ventana mientras el editor externo estaba abierto.
++            let resultado = (|| -> Result<()> {
++                if &lib.meta().id != biblioteca { return Err(Error::Invalid("Biblioteca diferente".into())); }
++                let it = lib.load_item(id)?;
++                if it.trashed { return Err(Error::Invalid("Elemento en la papelera".into())); }
++                if it.note.as_deref().unwrap_or("") != anterior { return Err(Error::Invalid("La nota cambió en Grimorio. Recarga antes de guardar.".into())); }
++                en_lote(lib, std::slice::from_ref(id), id_cmd, aviso, vista,
++                    "nota desde Obsidian", Toca::nota(), |_| Parche::nota(texto))?;
++                Ok(())
++            })();
++            let respuesta = serde_json::json!({"tipo":"nota_externa", "solicitud":solicitud,
++                "id":id, "ok":resultado.is_ok(), "error":resultado.err().map(|e|e.to_string())});
++            aviso.manda(respuesta.to_string().as_bytes());
++        }
++
+         Comando::Nota { id, texto } => {
+             let titulo = if texto.trim().is_empty() {
+                 t("borrar la nota", "delete the note")
+diff --git a/app/puente/src/lib.rs b/app/puente/src/lib.rs
+index 44d1f27..82d62b6 100644
+--- a/app/puente/src/lib.rs
++++ b/app/puente/src/lib.rs
+@@ -1092,6 +1092,32 @@ mod tests {
+         unsafe { grim_parar(n) };
+     }
+ 
++    #[test]
++    fn nota_externa_confirma_y_rechaza_conflictos_y_otra_biblioteca() {
++        let (_d, raiz, ids) = biblioteca_con(1);
++        let meta: serde_json::Value = serde_json::from_slice(&std::fs::read(raiz.join("library.json")).unwrap()).unwrap();
++        let r = Recolector::nuevo();
++        let ruta = CString::new(raiz.to_str().unwrap()).unwrap();
++        let n = unsafe { grim_iniciar(ruta.as_ptr(), recoge, &r as *const Recolector as *mut c_void) };
++        r.espera("vista");
++        r.olvida();
++        let initial = Library::open(&raiz).unwrap().load_item(&ids[0]).unwrap().note.unwrap_or_default();
++        let command = serde_json::json!({"cmd":"nota_externa","id":ids[0],"texto":"paladino de Walmeria","anterior":initial,"biblioteca":meta["id"],"solicitud":"prueba"});
++        manda(n, &command.to_string());
++        assert_eq!(r.espera("nota_externa")["ok"], true);
++        r.olvida();
++        manda(n, &command.to_string());
++        assert_eq!(r.espera("nota_externa")["ok"], false);
++        r.olvida();
++        let mut wrong=command.clone();wrong["biblioteca"]=serde_json::json!("otra");wrong["anterior"]=serde_json::json!("paladino de Walmeria");
++        manda(n, &wrong.to_string());
++        assert_eq!(r.espera("nota_externa")["ok"], false);
++        unsafe { grim_parar(n) };
++        let lib=Library::open(&raiz).unwrap();
++        assert_eq!(lib.load_item(&ids[0]).unwrap().note.as_deref(),Some("paladino de Walmeria"));
++        assert_eq!(lib.index().search(&grimorio_core::Query { text:Some("Walmeria".into()), ..Default::default() }).unwrap().len(),1);
++    }
++
+     #[test]
+     fn un_comando_que_no_se_entiende_contesta_con_un_error() {
+         let (_d, raiz, _) = biblioteca_con(1);
+diff --git a/app/src/nucleo.cpp b/app/src/nucleo.cpp
+index d07e6d5..2fb603c 100644
+--- a/app/src/nucleo.cpp
++++ b/app/src/nucleo.cpp
+@@ -39,7 +39,9 @@ void Nucleo::procesar(const QString &json)
+     const QJsonObject ev = QJsonDocument::fromJson(json.toUtf8()).object();
+     const QString tipo = ev.value(QStringLiteral("tipo")).toString();
+ 
+-    if (tipo == QLatin1String("listo")) {
++    if (tipo == QLatin1String("nota_externa")) {
++        emit notaExternaTerminada(ev.toVariantMap());
++    } else if (tipo == QLatin1String("listo")) {
+         m_nombre = ev.value(QStringLiteral("nombre")).toString();
+         m_raiz = ev.value(QStringLiteral("raiz")).toString();
+         m_total = ev.value(QStringLiteral("total")).toInt();
+@@ -729,3 +731,11 @@ void Nucleo::reordenar(const QString &id, const QString &carpeta, const QString
+     if (!despues.isEmpty()) o[QStringLiteral("despues")] = despues;
+     mandar(o);
+ }
++
++void Nucleo::notaExterna(const QJsonObject &peticion)
++{
++    QJsonObject comando = peticion;
++    comando.remove(QStringLiteral("accion"));
++    comando.insert(QStringLiteral("cmd"), QStringLiteral("nota_externa"));
++    mandar(comando);
++}
+diff --git a/app/src/nucleo.h b/app/src/nucleo.h
+index e831b61..6848be1 100644
+--- a/app/src/nucleo.h
++++ b/app/src/nucleo.h
+@@ -128,6 +128,7 @@ public:
+     Q_INVOKABLE void etiquetar(const QStringList &ids, const QStringList &anadir,
+                                const QStringList &quitar);
+     Q_INVOKABLE void nota(const QString &id, const QString &texto);
++    void notaExterna(const QJsonObject &peticion);
+     Q_INVOKABLE void renombrar(const QString &id, const QString &nombre);
+     /// Con `conVersiones`, una principal se lleva su pila entera; sin él va
+     /// sola y su versión más pesada ocupa su sitio.
+@@ -223,6 +224,7 @@ public:
+     Q_INVOKABLE bool cuelgaDe(const QString &hija, const QString &padre) const;
+ 
+ signals:
++    void notaExternaTerminada(const QVariantMap &respuesta);
+     void listo();
+     void nombreCambio();
+     void vistaNueva(int n);
+diff --git a/app/src/puerta.cpp b/app/src/puerta.cpp
+index 63b89b3..686f2b9 100644
+--- a/app/src/puerta.cpp
++++ b/app/src/puerta.cpp
+@@ -3,6 +3,7 @@
+ #include "traer.h"
+ 
+ #include <QCoreApplication>
++#include <QFile>
+ #include <QDesktopServices>
+ #include <QDir>
+ #include <QFileInfo>
+@@ -60,6 +61,10 @@ Puerta::Puerta(Nucleo *nucleo, Traer *traer, const QString &version, bool escuch
+       m_servidor(new QLocalServer(this))
+ {
+     connect(m_nucleo, &Nucleo::importado, this, &Puerta::acabado);
++    connect(m_nucleo, &Nucleo::notaExternaTerminada, this, [this](const QVariantMap &r) {
++        const auto s = m_pendientes.take(r.value(QStringLiteral("solicitud")).toString());
++        if (s) contestar(s, QJsonDocument(QJsonObject::fromVariantMap(r)).toJson(QJsonDocument::Compact));
++    });
+     connect(m_traer, &Traer::falloTraer, this, &Puerta::fallido);
+     if (!escuchar) return;
+     m_servidor->setSocketOptions(QLocalServer::UserAccessOption);
+@@ -201,7 +206,9 @@ QByteArray Puerta::responder(const QByteArray &linea, QLocalSocket *s)
+     if (accion == QLatin1String("hola")) {
+         return QJsonDocument(QJsonObject { { QStringLiteral("ok"), true },
+                                            { QStringLiteral("biblioteca"), m_nucleo->nombre() },
+-                                           { QStringLiteral("version"), m_version } })
++                                           { QStringLiteral("version"), m_version },
++                                           { QStringLiteral("raiz"), m_nucleo->raiz() },
++                                           { QStringLiteral("capacidades"), QJsonArray { QStringLiteral("nota_externa") } } })
+             .toJson(QJsonDocument::Compact);
+     }
+ 
+@@ -259,6 +266,22 @@ QByteArray Puerta::responder(const QByteArray &linea, QLocalSocket *s)
+         return {};
+     }
+ 
++    if (accion == QLatin1String("nota_externa")) {
++        if (!p.value(QStringLiteral("id")).isString() || !p.value(QStringLiteral("texto")).isString()
++            || !p.value(QStringLiteral("anterior")).isString() || !p.value(QStringLiteral("biblioteca")).isString())
++            return error(tr("faltan campos de la nota"));
++        const QString solicitud = QUuid::createUuid().toString(QUuid::WithoutBraces);
++        QJsonObject comando = p;
++        comando.insert(QStringLiteral("solicitud"), solicitud);
++        m_pendientes.insert(solicitud, s);
++        QTimer::singleShot(15000, this, [this, solicitud] {
++            const auto pendiente = m_pendientes.take(solicitud);
++            if (pendiente) contestar(pendiente, error(tr("sin confirmación; consulta la nota antes de reintentar")));
++        });
++        m_nucleo->notaExterna(comando);
++        return {};
++    }
++
+     if (accion == QLatin1String("mostrar")) {
+         const QString id = p.value(QStringLiteral("id")).toString();
+         if (id.isEmpty()) return error(tr("falta el elemento"));

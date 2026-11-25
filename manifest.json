@@ -1,0 +1,10 @@
+{
+  "id": "grimorio-catalog",
+  "name": "Catálogo Grimorio",
+  "version": "0.3.0",
+  "minAppVersion": "1.15.1",
+  "description": "Browse a local Grimorio image library, search annotations and connect references to notes.",
+  "author": "Arddhu",
+  "isDesktopOnly": true,
+  "authorUrl": "https://github.com/arddhu-hub"
+}
