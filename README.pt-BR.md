@@ -7,6 +7,10 @@ sua própria conexão, com busca em nomes, tags, anotações e notas relacionada
 É possível ocultar nomes, tags e descrições, abrir a origem e o arquivo original,
 vincular notas existentes e editar anotações abaixo da imagem.
 
+O controle **Tamanho das miniaturas** ajusta a galeria de 120 a 360 pixels, em
+tempo real. O tamanho fica salvo em cada documento `.grimorio`; imagens maiores
+ocupam menos colunas, e a rolagem permanece disponível.
+
 ## Instalação e compatibilidade
 
 Copie `main.js`, `manifest.json` e `styles.css` de uma release para

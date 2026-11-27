@@ -13,6 +13,11 @@ paginated thumbnails, follow sources, open originals and link existing notes.
 Toggle filenames, tags and annotation previews independently. Annotations are
 editable directly below the image, with draft recovery and conflict detection.
 
+Use the **Tamanho das miniaturas** slider above the gallery to choose a thumbnail
+size from 120 to 360 pixels. Changes apply immediately without reloading images.
+The size is saved in each `.grimorio` document independently, alongside its
+display preferences. Larger thumbnails use fewer columns; overflowing rows scroll.
+
 ## Compatibility and limits
 
 Desktop Obsidian 1.15.1 or newer. Windows is the supported platform for this initial

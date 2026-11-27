@@ -163,12 +163,44 @@ class CatalogView extends TextFileView {
       toggle.title = "Exibir ou ocultar " + label.toLowerCase();
       this.visibilityButtons[key] = toggle;
     }
+    const sizeControl = display.createEl("label", { cls: "grim-size-control" });
+    sizeControl.createSpan({ text: "Tamanho das miniaturas" });
+    this.thumbnailSlider = sizeControl.createEl("input", { type: "range" });
+    this.thumbnailSlider.min = "120";
+    this.thumbnailSlider.max = "360";
+    this.thumbnailSlider.step = "10";
+    this.thumbnailSlider.setAttribute("aria-label", "Tamanho das miniaturas");
+    this.thumbnailSizeOutput = sizeControl.createEl("output");
+    this.thumbnailSlider.oninput = () => {
+      this.document.display = {
+        ...this.display,
+        thumbnailSize: Number(this.thumbnailSlider.value),
+      };
+      this.applyThumbnailSize();
+      this.requestSave();
+    };
     this.applyVisibility();
     this.status = el.createDiv({ cls: "grim-status" });
     const body = el.createDiv({ cls: "grim-body" });
     this.list = body.createDiv({ cls: "grim-gallery" });
     this.detail = body.createDiv({ cls: "grim-detail" });
     this.pager = el.createDiv({ cls: "grim-pager" });
+  }
+  get thumbnailSize() {
+    const size = this.document?.display?.thumbnailSize;
+    return typeof size === "number" && Number.isFinite(size)
+      ? Math.min(360, Math.max(120, Math.round(size / 10) * 10))
+      : 180;
+  }
+  applyThumbnailSize() {
+    const size = this.thumbnailSize;
+    this.contentEl.style.setProperty("--grim-thumbnail-size", size + "px");
+    this.contentEl.style.setProperty("--grim-thumbnail-height", Math.round(size * 190 / 180) + "px");
+    if (this.thumbnailSlider) {
+      this.thumbnailSlider.value = String(size);
+      this.thumbnailSlider.setAttribute("aria-valuetext", size + " pixels");
+    }
+    this.thumbnailSizeOutput?.setText(size + " px");
   }
   get display() {
     return {
@@ -179,6 +211,7 @@ class CatalogView extends TextFileView {
     };
   }
   applyVisibility() {
+    this.applyThumbnailSize();
     for (const [key, value] of Object.entries(this.display)) {
       if (!["name", "tags", "description"].includes(key)) continue;
       this.contentEl.classList.toggle("grim-hide-" + key, !value);

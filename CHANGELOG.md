@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.4
+
+- Add a live 120–360 px thumbnail-size slider, saved independently in each Grimorio document.
+- Resize the grid and image area without reloading images or losing scroll support.
+
 ## 0.3.3
 
 - Keep gallery thumbnails at a stable minimum size and scroll overflowing rows in wide and narrow panes.
