@@ -1,5 +1,9 @@
 # Grimorio Catalog
 
+> **Descontinuado — substituído pelo [Folio](https://github.com/arddhu-hub/folio).**
+>
+> O Grimorio Catalog não receberá novas atualizações. O Folio oferece biblioteca local de imagens, importação, tags e anotações diretamente no Obsidian, sem exigir o Grimorio aberto. Este repositório e suas releases permanecem disponíveis para consulta. Preserve a biblioteca Grimorio, os documentos `.grimorio` e o `data.json` do plugin antes de migrar; não basta trocar a extensão. Veja as [orientações de migração](https://github.com/arddhu-hub/folio/blob/main/MIGRATION.md). A descontinuação se refere a este plugin de integração, não ao projeto Grimorio original.
+
 Uma biblioteca visual dentro do Obsidian, sem uma nota Markdown para cada imagem.
 Crie um documento em **Novo grimório**, pela faixa lateral, paleta de comandos ou
 menu de uma pasta. Conecte a pasta da biblioteca Grimorio. Cada documento guarda
