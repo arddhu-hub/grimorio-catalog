@@ -1,5 +1,9 @@
 # Grimorio Catalog
 
+> **Discontinued — replaced by [Folio](https://github.com/arddhu-hub/folio).**
+>
+> Grimorio Catalog is no longer maintained. Folio provides a local image library directly in Obsidian, including imports, tags and annotations, without requiring Grimorio to be open. This repository and its releases remain available for reference. Back up your Grimorio library, `.grimorio` documents and plugin `data.json`; migration is explicit, not an automatic format rename. See [Folio migration guidance](https://github.com/arddhu-hub/folio/blob/main/MIGRATION.md). This notice concerns this integration plugin, not the independent upstream Grimorio project.
+
 [Português](README.pt-BR.md) · [Attribution](ATTRIBUTION.md)
 
 Browse a local [Grimorio](https://github.com/Dohkku/grimorio) image library as a
