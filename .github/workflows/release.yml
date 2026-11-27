@@ -32,7 +32,7 @@ jobs:
             manifest.json
             styles.css
   release:
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[publish]'))
     needs: check
     runs-on: ubuntu-latest
     permissions:
@@ -54,5 +54,7 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${files[@]}" --clobber
           else
-            gh release create "$TAG" "${files[@]}" --draft --target "${{ github.sha }}" --title "$TAG" --notes "See CHANGELOG.md for changes and README.md for installation and limitations."
+            options=(--draft)
+            if [ "${{ github.event_name }}" = "push" ]; then options=(); fi
+            gh release create "$TAG" "${files[@]}" "${options[@]}" --target "${{ github.sha }}" --title "$TAG" --notes "See CHANGELOG.md for changes and README.md for installation and limitations. Maintained by Arddhu; all custom coding by OpenAI Codex under Arddhu's direction."
           fi

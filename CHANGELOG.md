@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3
+
+- Keep gallery thumbnails at a stable minimum size and scroll overflowing rows in wide and narrow panes.
+- Reserve scrollbar space and prevent toolbar and gallery rows from being compressed. 
+
 ## 0.3.2
 
 - Match both README titles to the manifest name.
