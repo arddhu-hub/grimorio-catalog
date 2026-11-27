@@ -51,7 +51,7 @@ class CatalogView extends TextFileView {
         throw new Error("Documento incompatível");
       this.document = doc;
       this.selected = null;
-      this.data = null;
+      this.catalogData = null;
       this.signature = null;
       if (this.status) {
         this.applyVisibility();
@@ -71,7 +71,7 @@ class CatalogView extends TextFileView {
   clear() {
     this.document = { schema: 1, type: "grimorio-catalog", libraryPath: "" };
     this.selected = null;
-    this.data = null;
+    this.catalogData = null;
     this.signature = null;
     if (this.detail) this.clearDetail();
   }
@@ -246,7 +246,7 @@ class CatalogView extends TextFileView {
       ]);
       if (quiet && signature === this.signature) return;
       this.signature = signature;
-      this.data = data;
+      this.catalogData = data;
       this.tags.empty();
       this.tags.createEl("option", { value: "", text: "Todas as tags" });
       for (const tag of [...new Set(data.items.flatMap((i) => i.tags))].sort(
@@ -271,16 +271,16 @@ class CatalogView extends TextFileView {
     }
   }
   render() {
-    if (!this.data) return;
+    if (!this.catalogData) return;
     const items = filterItems(
-      this.data.items,
+      this.catalogData.items,
       this.query,
       this.tag,
       this.plugin.data.links,
-      this.data.library.id,
+      this.catalogData.library.id,
     );
     this.status.setText(
-      `${this.data.library.name} · ${items.length} de ${this.data.items.length} referências${this.data.errors.length ? " · " + this.data.errors.length + " registros não puderam ser lidos" : ""}`,
+      `${this.catalogData.library.name} · ${items.length} de ${this.catalogData.items.length} referências${this.catalogData.errors.length ? " · " + this.catalogData.errors.length + " registros não puderam ser lidos" : ""}`,
     );
     this.list.empty();
     this.pager.empty();
@@ -368,9 +368,9 @@ class CatalogView extends TextFileView {
       text: item.tags.join(" · "),
     });
     el.createDiv({ text: "★".repeat(item.stars || 0) });
-    const note = el.createDiv({ cls: "grim-note grim-description" });
+    const note = el.createDiv({ cls: "grim-note" });
     note.createEl("h4", { text: "Anotação" });
-    const draftKey = this.data.library.id + ":" + item.id,
+    const draftKey = this.catalogData.library.id + ":" + item.id,
       draft = this.plugin.data.drafts[draftKey];
     const expected = draft ? draft.original : item.note;
     const editor = note.createEl("textarea", {
@@ -402,7 +402,7 @@ class CatalogView extends TextFileView {
       try {
         await saveNote(
           this.libraryPath,
-          this.data.library.id,
+          this.catalogData.library.id,
           { ...item, note: expected },
           editor.value,
         );
@@ -452,14 +452,17 @@ class CatalogView extends TextFileView {
     button(fileActions, "Mostrar no Grimorio", () =>
       this.plugin.showInGrimorio(this.libraryPath, item.id),
     );
+    button(fileActions, "Editar tags no Grimorio", () =>
+      this.plugin.showInGrimorio(this.libraryPath, item.id),
+    );
     button(fileActions, "Copiar referência", () => {
       navigator.clipboard.writeText(
-        `grimorio://${this.data.library.id}/${item.id}\n${item.name}\n${editor.value}\n${item.source}`,
+        `grimorio://${this.catalogData.library.id}/${item.id}\n${item.name}\n${editor.value}\n${item.source}`,
       );
       new Notice("Referência copiada.");
     });
     el.createEl("h4", { text: "Notas relacionadas no Obsidian" });
-    const key = `${this.data.library.id}:${item.id}`;
+    const key = `${this.catalogData.library.id}:${item.id}`;
     const links = el.createDiv();
     for (const target of this.plugin.data.links[key] || []) {
       const row = links.createDiv();

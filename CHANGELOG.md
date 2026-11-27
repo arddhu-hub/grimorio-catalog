@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.5
+
+- Keep library records separate from the TextFileView data field so saving thumbnail sizes cannot break previews.
+- Keep the annotation editor visible when gallery descriptions are hidden.
+- Add an explicit shortcut to edit tags in the connected Grimorio application.
+
 ## 0.3.4
 
 - Add a live 120–360 px thumbnail-size slider, saved independently in each Grimorio document.

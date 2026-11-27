@@ -18,6 +18,7 @@ test("documentos guardam conexões independentes e não usam um caminho global",
     addRibbonIcon() {}
     addCommand() {}
     addSettingTab() {}
+    async saveData() {}
   }
   class View {
     constructor(leaf) {
@@ -65,12 +66,18 @@ test("documentos guardam conexões independentes e não usam um caminho global",
     function element() {
       const styles = {};
       return {
+        children: [], parentElement: {},
         styles,
         style: { setProperty: (key, value) => { styles[key] = value; } },
         classList: { toggle() {}, remove() {}, add() {} },
-        empty() {}, addClass() {}, setAttribute() {}, setText(value) { this.text = value; },
-        createEl() { return element(); }, createDiv() { return element(); },
-        createSpan() { return element(); },
+        empty() { this.children = []; }, addClass() {}, setAttribute() {}, setText(value) { this.text = value; },
+        createEl(tag, options = {}) {
+          const child = Object.assign(element(), {tag, ...options, parentElement: this});
+          this.children.push(child);
+          return child;
+        },
+        createDiv(options) { return this.createEl("div", options); },
+        createSpan(options) { return this.createEl("span", options); },
       };
     }
     a.contentEl = element();
@@ -91,6 +98,33 @@ test("documentos guardam conexões independentes e não usam um caminho global",
       assert.equal(reopened.thumbnailSize, expected);
     }
     assert.equal(JSON.parse(a.getViewData()).libraryPath, "D:/A.grimorio");
+    const item = {id: "sample", ext: "txt", name: "Example", note: "Original note", tags: ["reference"], source: "https://example.com"};
+    a.catalogData = {library: {id: "library"}, items: [item], errors: []};
+    // TextFileView owns `data` and writes serialized document text during saves.
+    a.requestSave = () => { a.data = a.getViewData(); };
+    a.thumbnailSlider.value = "320";
+    a.thumbnailSlider.oninput();
+    assert.equal(typeof a.data, "string");
+    await a.show(item);
+    const flatten = node => [node, ...node.children.flatMap(flatten)];
+    const nodes = flatten(a.detail);
+    const editor = nodes.find(node => node.tag === "textarea");
+    assert.equal(editor.value, "Original note");
+    assert.ok(!editor.parentElement.cls.includes("grim-description"));
+    const save = nodes.find(node => node.text === "Salvar anotação");
+    assert.ok(save);
+    assert.ok(nodes.find(node => node.text === "Abrir origem"));
+    const tags = nodes.find(node => node.text === "Editar tags no Grimorio");
+    let shown;
+    plugin.showInGrimorio = async (...args) => { shown = args; };
+    await tags.onclick();
+    assert.deepEqual(shown, ["D:/A.grimorio", "sample"]);
+    editor.value = "Updated note";
+    editor.oninput();
+    assert.equal(save.disabled, false);
+    assert.deepEqual(plugin.data.drafts["library:sample"], {original: "Original note", text: "Updated note"});
+    await plugin.save();
+    a.noteDirty = false;
     a.clear();
     assert.equal(a.libraryPath, "");
     assert.equal(b.libraryPath, "D:/B.grimorio");
